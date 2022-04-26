@@ -18,6 +18,7 @@ import { Lecture } from './lecture/entities/lecture.entity'
 			entities: [Lecture],
 			synchronize: true,
 		}),
+		TypeOrmModule.forFeature([Lecture]),
 		LectureModule,
 	],
 	controllers: [AppController],

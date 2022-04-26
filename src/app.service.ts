@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import puppeteer from 'puppeteer/lib/cjs/puppeteer/node-puppeteer-core'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Lecture } from './lecture/entities/lecture.entity'
+import { Repository } from 'typeorm'
 
 export type LectureInformationModel = {
 	title: string
@@ -10,7 +13,12 @@ export type LectureInformationModel = {
 
 @Injectable()
 export class AppService {
-	async getHello(): Promise<LectureInformationModel> {
+	constructor(
+		@InjectRepository(Lecture)
+		private lectureRepository: Repository<Lecture>,
+	) {}
+
+	async getHello() {
 		const browser = await puppeteer.launch({ headless: true })
 		const page = await browser.newPage()
 		await page.goto('https://fastcampus.co.kr/category_online_programming')
@@ -39,8 +47,15 @@ export class AppService {
 		})
 		await browser.close()
 
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		return searchData
+		searchData.forEach((data) => {
+			const { title, thumbnail, caption } = data
+			const result = this.lectureRepository.create({
+				title,
+				thumbnail,
+				caption,
+			})
+
+			this.lectureRepository.save(result)
+		})
 	}
 }

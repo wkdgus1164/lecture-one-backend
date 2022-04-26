@@ -12,8 +12,17 @@ export class LectureService {
 		private lectureRepository: Repository<Lecture>,
 	) {}
 
-	create(createLectureDto: CreateLectureDto) {
-		return 'This action adds a new lecture'
+	async create(createLectureDto: CreateLectureDto) {
+		const { thumbnail, title, caption } = createLectureDto
+
+		const data = this.lectureRepository.create({
+			thumbnail,
+			title,
+			caption,
+		})
+
+		await this.lectureRepository.save(data)
+		return data
 	}
 
 	findAll(): Promise<Lecture[]> {
