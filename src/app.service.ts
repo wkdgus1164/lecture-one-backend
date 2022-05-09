@@ -8,7 +8,29 @@ export type LectureInformationModel = {
 	title: string
 	thumbnail: string
 	caption: string
-	tags: string
+}
+
+const lectureSites = {
+	fastcampus: 'https://fastcampus.co.kr/',
+	inflean: 'https://www.inflearn.com/courses/it-programming/',
+}
+
+const lecturePages = {
+	fastcampus: {
+		categories: {
+			programming: lectureSites.fastcampus + 'category_online_programming',
+			dataScience: lectureSites.fastcampus + 'category_online_datascience',
+			design: lectureSites.fastcampus + 'category_online_dgn',
+			video: lectureSites.fastcampus + 'category_online_video',
+			finance: lectureSites.fastcampus + 'category_online_finance',
+		},
+	},
+	inflearn: {
+		categories: {
+			webDev: lectureSites.inflean + 'web-dev',
+			frontend: lectureSites.inflean + 'front-end',
+		},
+	},
 }
 
 @Injectable()
@@ -18,44 +40,50 @@ export class AppService {
 		private lectureRepository: Repository<Lecture>,
 	) {}
 
-	async getHello() {
+	async crawlingAndSave() {
 		const browser = await puppeteer.launch({ headless: true })
 		const page = await browser.newPage()
-		await page.goto('https://fastcampus.co.kr/category_online_programming')
+
+		await page.goto(lecturePages.fastcampus.categories.programming)
 
 		const searchData = await page.evaluate(() => {
-			const contentsList = Array.from(document.querySelectorAll('.card__container'))
-			const contentsObjList = []
+			const targetContainer = Array.from(document.querySelectorAll('.card__container'))
+			const targetElement = []
 
-			contentsList.forEach((item) => {
+			targetContainer.forEach((item: HTMLElement) => {
 				if (item.className === 'card__container') {
 					const title = item.querySelector('.card__title')
 					const thumbnail = item.querySelector('.card__image-wrapper img')
 					const caption = item.querySelector('.card__content')
-					const tags = item.querySelector('.card__labels ')
 
-					contentsObjList.push({
+					targetElement.push({
 						title: title.textContent,
 						thumbnail: thumbnail.getAttribute('src'),
 						caption: caption.textContent,
-						tags: tags.textContent,
 					})
 				}
 			})
 
-			return contentsObjList
+			return targetElement
 		})
+
 		await browser.close()
+		this.saveDatabase(searchData)
+	}
 
-		searchData.forEach((data) => {
-			const { title, thumbnail, caption } = data
-			const result = this.lectureRepository.create({
-				title,
-				thumbnail,
-				caption,
-			})
+	async saveDatabase(data: LectureInformationModel[]) {
+		for (const data1 of data) {
+			const result = await this.lectureRepository.update(
+				{
+					title: data1.title,
+				},
+				data1,
+			)
 
-			this.lectureRepository.save(result)
-		})
+			if (result.affected === 0) {
+				const result = this.lectureRepository.create(data1)
+				await this.lectureRepository.save(result)
+			}
+		}
 	}
 }
