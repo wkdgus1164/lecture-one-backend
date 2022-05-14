@@ -1,4 +1,5 @@
-import { IsString } from 'class-validator'
+import { IsEnum, IsString } from 'class-validator'
+import { LectureTags } from '../constants/LectureTags'
 
 export class CreateLectureDto {
 	@IsString()
@@ -9,4 +10,7 @@ export class CreateLectureDto {
 
 	@IsString()
 	caption: string
+
+	@IsEnum(LectureTags)
+	tag: string
 }

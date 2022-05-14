@@ -3,34 +3,14 @@ import puppeteer from 'puppeteer/lib/cjs/puppeteer/node-puppeteer-core'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Lecture } from './lecture/entities/lecture.entity'
 import { Repository } from 'typeorm'
+import { LectureTags } from './lecture/constants/LectureTags'
+import { lecturePages } from './LectureLinks'
 
 export type LectureInformationModel = {
 	title: string
 	thumbnail: string
 	caption: string
-}
-
-const lectureSites = {
-	fastcampus: 'https://fastcampus.co.kr/',
-	inflean: 'https://www.inflearn.com/courses/it-programming/',
-}
-
-const lecturePages = {
-	fastcampus: {
-		categories: {
-			programming: lectureSites.fastcampus + 'category_online_programming',
-			dataScience: lectureSites.fastcampus + 'category_online_datascience',
-			design: lectureSites.fastcampus + 'category_online_dgn',
-			video: lectureSites.fastcampus + 'category_online_video',
-			finance: lectureSites.fastcampus + 'category_online_finance',
-		},
-	},
-	inflearn: {
-		categories: {
-			webDev: lectureSites.inflean + 'web-dev',
-			frontend: lectureSites.inflean + 'front-end',
-		},
-	},
+	tag: LectureTags
 }
 
 @Injectable()
@@ -40,13 +20,8 @@ export class AppService {
 		private lectureRepository: Repository<Lecture>,
 	) {}
 
-	async crawlingAndSave() {
-		const browser = await puppeteer.launch({ headless: true })
-		const page = await browser.newPage()
-
-		await page.goto(lecturePages.fastcampus.categories.programming)
-
-		const searchData = await page.evaluate(() => {
+	async getTargetData(page): Promise<LectureInformationModel[]> {
+		return await page.evaluate(async () => {
 			const targetContainer = Array.from(document.querySelectorAll('.card__container'))
 			const targetElement = []
 
@@ -59,16 +34,59 @@ export class AppService {
 					targetElement.push({
 						title: title.textContent,
 						thumbnail: thumbnail.getAttribute('src'),
-						caption: caption.textContent,
+						caption: caption.textContent.substring(0, 50),
+						// tag: LectureTags.FASTCAMPUS,
 					})
 				}
 			})
 
 			return targetElement
 		})
+	}
+
+	async getTargetData1(page): Promise<LectureInformationModel[]> {
+		return await page.evaluate(async () => {
+			const targetContainer = Array.from(document.querySelectorAll('.class_card'))
+			const targetElement = []
+
+			targetContainer.forEach((item: HTMLElement) => {
+				if (item.className === 'class_card') {
+					const title = item.querySelector('.class_title')
+					const thumbnail = item.querySelector('.thumb img')
+					const caption = item.querySelector('.class_tutor')
+
+					targetElement.push({
+						title: title.textContent,
+						thumbnail: thumbnail.getAttribute('src'),
+						caption: caption.textContent.substring(0, 50),
+						tag: 'taling',
+					})
+				}
+			})
+
+			return targetElement
+		})
+	}
+
+	async crawlingAndSave() {
+		const browser = await puppeteer.launch({ headless: true })
+		const page = await browser.newPage()
+		let extractedData = []
+
+		for (const target of lecturePages.fastcampus) {
+			await page.goto(target)
+			const output = await this.getTargetData(page)
+			output.forEach((data) => extractedData.push(data))
+		}
+
+		for (const target of lecturePages.taling) {
+			await page.goto(String(target))
+			const output = await this.getTargetData1(page)
+			output.forEach((data) => extractedData.push(data))
+		}
 
 		await browser.close()
-		this.saveDatabase(searchData)
+		await this.saveDatabase(extractedData)
 	}
 
 	async saveDatabase(data: LectureInformationModel[]) {

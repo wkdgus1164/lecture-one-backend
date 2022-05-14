@@ -13,12 +13,13 @@ export class LectureService {
 	) {}
 
 	async create(createLectureDto: CreateLectureDto) {
-		const { thumbnail, title, caption } = createLectureDto
+		const { thumbnail, title, caption, tag } = createLectureDto
 
 		const data = this.lectureRepository.create({
 			thumbnail,
 			title,
 			caption,
+			tag,
 		})
 
 		await this.lectureRepository.save(data)

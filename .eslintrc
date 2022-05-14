@@ -21,6 +21,7 @@
     "curly": "warn",
     "quotes": "off",
     "comma-style": "warn",
-    "semi": "off"
+    "semi": "off",
+    "prefer-const": "off"
   }
 }
