@@ -7,38 +7,38 @@ import { Repository } from 'typeorm'
 
 @Injectable()
 export class LectureService {
-	constructor(
-		@InjectRepository(Lecture)
-		private lectureRepository: Repository<Lecture>,
-	) {}
+    constructor(
+        @InjectRepository(Lecture)
+        private lectureRepository: Repository<Lecture>,
+    ) {}
 
-	async create(createLectureDto: CreateLectureDto) {
-		const { thumbnail, title, caption, tag } = createLectureDto
+    async create(createLectureDto: CreateLectureDto) {
+        const { thumbnail, title, caption, tag } = createLectureDto
 
-		const data = this.lectureRepository.create({
-			thumbnail,
-			title,
-			caption,
-			tag,
-		})
+        const data = this.lectureRepository.create({
+            thumbnail,
+            title,
+            caption,
+            tag,
+        })
 
-		await this.lectureRepository.save(data)
-		return data
-	}
+        await this.lectureRepository.save(data)
+        return data
+    }
 
-	findAll(): Promise<Lecture[]> {
-		return this.lectureRepository.find()
-	}
+    findAll(): Promise<Lecture[]> {
+        return this.lectureRepository.find()
+    }
 
-	findOne(id: number) {
-		return this.lectureRepository.findOne(id)
-	}
+    findOne(id: number) {
+        return this.lectureRepository.findOne(id)
+    }
 
-	update(id: number, updateLectureDto: UpdateLectureDto) {
-		return `This action updates a #${id} lecture`
-	}
+    update(id: number, updateLectureDto: UpdateLectureDto) {
+        return `This action updates a #${id} lecture`
+    }
 
-	remove(id: number) {
-		return `This action removes a #${id} lecture`
-	}
+    remove(id: number) {
+        return `This action removes a #${id} lecture`
+    }
 }
